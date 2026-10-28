@@ -11,6 +11,8 @@ spring:
     init:
       # 每次启动执行 schema.sql + data.sql（脚本本身幂等）
       mode: always
+      # 必须显式指定：中文 Windows 平台默认 GBK，会把 UTF-8 种子数据读歪
+      encoding: UTF-8
   servlet:
     multipart:
       max-file-size: 15MB
