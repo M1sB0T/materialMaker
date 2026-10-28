@@ -1,0 +1,49 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: material_maker
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 建表与种子数据：与本地开发共用同一份脚本，保证幂等
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./src/main/resources/data.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # 如需从宿主机访问容器 MySQL，可放开（映射到 3307 避免与本机 3306 冲突）
+    # ports:
+    #   - "3307:3306"
+
+  backend:
+    build: .
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: material_maker
+      DB_USER: root
+      DB_PASSWORD: root123
+      STORAGE_DIR: /app/data
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_ORIGIN: http://backend:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  backend-data:
