@@ -98,6 +98,7 @@ async function main() {
   check(task.status === "SUCCESS", "任务最终成功");
   const img = await fetch(`${BASE}${task.resultUrl}`);
   check(img.ok, `结果可访问: ${task.resultUrl}`);
+  await img.arrayBuffer(); // 完整读取响应体，避免中断下载在服务端产生连接中断噪音
 
   if (FAIL_PHASE) {
     console.log(`== 6. 失败注入验证（阶段：${FAIL_PHASE}）==`);
