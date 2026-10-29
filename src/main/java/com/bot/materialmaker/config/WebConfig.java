@@ -4,6 +4,7 @@ import com.bot.materialmaker.auth.AuthInterceptor;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -35,6 +36,11 @@ public class WebConfig implements WebMvcConfigurer {
         // 将本地上传目录与结果目录通过 /files/** 对外提供访问
         registry.addResourceHandler("/files/**")
                 .addResourceLocations("file:" + storageProperties.getRoot() + "/");
+        // 演示资源（封面/示例图）：no-cache 强制浏览器每次向服务器校验新旧，
+        // 避免换图后仍显示旧缓存（同地址文件内容变化时）
+        registry.addResourceHandler("/demo/**")
+                .addResourceLocations("classpath:/static/demo/")
+                .setCacheControl(CacheControl.noCache());
     }
 
     @Override
