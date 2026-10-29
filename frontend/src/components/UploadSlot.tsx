@@ -86,7 +86,7 @@ export function UploadSlot({
             <span className="slot-plus" aria-hidden>
               ＋
             </span>
-            选择图片
+            点击上传图片
           </span>
         </label>
       )}

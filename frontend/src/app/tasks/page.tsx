@@ -58,6 +58,15 @@ function TasksPageInner() {
 
   return (
     <>
+      <div className="pillbar" role="tablist" aria-label="板块切换">
+        <Link href="/" className="pill">
+          模板
+        </Link>
+        <span className="pill pill-active" aria-current="page">
+          我的任务
+        </span>
+      </div>
+
       <h1 className="page-title">我的任务</h1>
       <p className="page-subtitle">
         制作任务在后台继续执行，关闭页面不影响进度

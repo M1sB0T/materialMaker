@@ -38,8 +38,38 @@ export default function TemplateListPage() {
 
   return (
     <>
-      <h1 className="page-title">模板列表</h1>
-      <p className="page-subtitle">选择一个模板，上传素材并提交制作任务</p>
+      {/* 页签胶囊：与示例稿第一行对应，作为板块导航 */}
+      <div className="pillbar" role="tablist" aria-label="板块切换">
+        <span className="pill pill-active" aria-current="page">
+          模板
+        </span>
+        <Link href="/tasks" className="pill">
+          我的任务
+        </Link>
+      </div>
+
+      {/* 分类文字行：All / Trending 风格 */}
+      {!loading && !error && categories.length > 0 && (
+        <div className="catbar" role="tablist" aria-label="按分类筛选模板">
+          <button
+            type="button"
+            className={`cattab ${category === "" ? "cattab-active" : ""}`}
+            onClick={() => setCategory("")}
+          >
+            全部
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`cattab ${category === c ? "cattab-active" : ""}`}
+              onClick={() => setCategory(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading && <p className="spinner-text">模板加载中…</p>}
       {error && (
@@ -53,26 +83,6 @@ export default function TemplateListPage() {
 
       {!loading && !error && (
         <>
-          <div className="category-bar" role="tablist" aria-label="按分类筛选模板">
-            <button
-              type="button"
-              className={`chip ${category === "" ? "chip-active" : ""}`}
-              onClick={() => setCategory("")}
-            >
-              全部
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`chip ${category === c ? "chip-active" : ""}`}
-                onClick={() => setCategory(c)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-
           {filtered.length === 0 ? (
             <div className="empty-state">
               <span className="empty-icon">🗂️</span>
@@ -89,12 +99,8 @@ export default function TemplateListPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="template-cover" src={t.coverUrl} alt={`模板封面：${t.title}`} />
-                  <div className="template-card-body">
+                  <div className="template-overlay">
                     <h3 className="template-title">{t.title}</h3>
-                    <div className="template-meta">
-                      <span>{t.category}</span>
-                      <span>需要 {t.requiredImageCount} 张图片</span>
-                    </div>
                   </div>
                 </Link>
               ))}
