@@ -66,8 +66,8 @@ class TaskPipelineTest {
     private Template template() {
         Template template = new Template();
         template.setId("tpl-1");
-        template.setTitle("旅行明信片");
-        template.setResultAsset("demo-postcard.png");
+        template.setTitle("旅行拼图");
+        template.setResultAsset("demo-collage.png");
         return template;
     }
 

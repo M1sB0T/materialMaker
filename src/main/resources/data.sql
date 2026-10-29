@@ -3,8 +3,6 @@ INSERT IGNORE INTO templates
     (id, title, category, cover_url, description, required_image_count,
      accepted_mime_types, max_file_size_bytes, result_asset)
 VALUES
-    ('demo-postcard', '旅行明信片', '创意图片', '/demo/covers/demo-postcard.png',
-     '上传 2 张旅行照片，模拟生成一张复古明信片', 2, 'image/jpeg,image/png', 5242880, 'demo-postcard.png'),
     ('demo-avatar', '卡通头像', '创意图片', '/demo/covers/demo-avatar.png',
      '上传 1 张人像照片，模拟生成一张卡通风格头像', 1, 'image/jpeg,image/png', 5242880, 'demo-avatar.png'),
     ('demo-wallpaper', '手机壁纸', '创意图片', '/demo/covers/demo-wallpaper.png',

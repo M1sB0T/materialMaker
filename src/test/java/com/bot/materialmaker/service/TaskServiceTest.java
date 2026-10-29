@@ -48,7 +48,7 @@ class TaskServiceTest {
     private Template template(String id, int requiredCount) {
         Template t = new Template();
         t.setId(id);
-        t.setTitle("旅行明信片");
+        t.setTitle("旅行拼图");
         t.setRequiredImageCount(requiredCount);
         t.setAcceptedMimeTypes("image/jpeg,image/png");
         t.setMaxFileSizeBytes(5242880L);
