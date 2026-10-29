@@ -23,6 +23,13 @@ public interface TaskMapper {
     @Update("UPDATE tasks SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") String id, @Param("status") String status);
 
+    /** 原子抢占：仅当任务仍为 WAITING 时置为 PROCESSING，返回受影响行数（0 表示已被处理/非等待态） */
+    @Update("UPDATE tasks SET status = 'PROCESSING' WHERE id = #{id} AND status = 'WAITING'")
+    int claimForProcessing(@Param("id") String id);
+
+    @Select("SELECT * FROM tasks WHERE status = #{status}")
+    List<Task> findByStatus(@Param("status") String status);
+
     @Update("UPDATE tasks SET current_phase = #{phase} WHERE id = #{id}")
     int updatePhase(@Param("id") String id, @Param("phase") String phase);
 

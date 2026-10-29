@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // 尽力通知服务端吊销 token（失败不影响本地登出）
+    api("/api/auth/logout", { method: "DELETE" }).catch(() => {});
     clearAuth();
     setAuth(null);
   }, []);

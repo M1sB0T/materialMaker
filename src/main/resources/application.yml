@@ -26,6 +26,10 @@ app:
   storage:
     # 上传素材与生成结果的本地存储根目录
     root: ${STORAGE_DIR:./data}
+  dev-tools:
+    # 演示调试接口（/api/dev/simulation）开关：默认关闭，生产环境务必保持关闭；
+    # Docker 演示部署通过环境变量 DEV_TOOLS_ENABLED=true 打开
+    enabled: ${DEV_TOOLS_ENABLED:false}
 
 logging:
   level:

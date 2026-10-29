@@ -1,7 +1,7 @@
 package com.bot.materialmaker.config;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "simulation")
 public class SimulationProperties {
 
-    private Map<String, Long> stepDelayMillis = new LinkedHashMap<>();
+    /** 后台流水线线程读取、dev 接口线程写入，必须使用并发安全实现 */
+    private Map<String, Long> stepDelayMillis = new ConcurrentHashMap<>();
 
     private String failPhase = "";
 

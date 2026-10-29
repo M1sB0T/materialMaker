@@ -29,11 +29,16 @@ public class WebConfig implements WebMvcConfigurer {
         // 模板浏览公开；任务与素材接口要求登录
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/tasks/**", "/api/materials/**");
+        // 用户上传素材与生成结果属私有内容，静态访问同样要求登录
+        // （<img> 场景通过 ?token= 查询参数携带凭证）
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/files/uploads/**", "/files/results/**");
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 将本地上传目录与结果目录通过 /files/** 对外提供访问
+        // （其中 /files/uploads/**、/files/results/** 已由上方拦截器要求登录）
         registry.addResourceHandler("/files/**")
                 .addResourceLocations("file:" + storageProperties.getRoot() + "/");
         // 演示资源（封面/示例图）：no-cache 强制浏览器每次向服务器校验新旧，

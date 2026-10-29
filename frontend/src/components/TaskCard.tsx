@@ -1,5 +1,6 @@
 "use client";
 
+import { fileUrl } from "@/lib/api";
 import { formatTime, statusText, stepStatusText, type TasksSnapshot } from "@/lib/tasksStore";
 import type { TaskView } from "@/types";
 
@@ -43,7 +44,7 @@ export function TaskCard({ task }: { task: TaskView }) {
       {task.status === "SUCCESS" && task.resultUrl && (
         <div className="task-result">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={task.resultUrl} alt={`任务 ${task.templateTitle} 的制作结果`} />
+          <img src={fileUrl(task.resultUrl)} alt={`任务 ${task.templateTitle} 的制作结果`} />
           <p className="result-caption">完成于 {formatTime(task.finishedAt)}</p>
         </div>
       )}

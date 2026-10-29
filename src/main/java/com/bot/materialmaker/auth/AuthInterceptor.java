@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-/** 简单令牌认证：从 X-Auth-Token 头解析用户，注入 request attribute。 */
+/**
+ * 简单令牌认证：从 X-Auth-Token 头解析用户，注入 request attribute。
+ * 对 <img> 等无法携带自定义请求头的静态资源请求，允许通过 ?token= 查询参数兜底。
+ */
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
@@ -24,11 +27,14 @@ public class AuthInterceptor implements HandlerInterceptor {
             throws Exception {
         String token = request.getHeader("X-Auth-Token");
         if (token == null || token.isBlank()) {
+            token = request.getParameter("token");
+        }
+        if (token == null || token.isBlank()) {
             return reject(response, "未登录，请先登录");
         }
         Long userId = tokenMapper.findUserIdByToken(token.trim());
         if (userId == null) {
-            return reject(response, "登录凭证无效，请重新登录");
+            return reject(response, "登录凭证无效或已过期，请重新登录");
         }
         request.setAttribute(USER_ID_ATTR, userId);
         return true;

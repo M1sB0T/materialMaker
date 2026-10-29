@@ -22,6 +22,9 @@ docker compose up --build
 
 数据库初始化：compose 将 `src/main/resources/schema.sql`、`data.sql` 挂载到 MySQL 的 `/docker-entrypoint-initdb.d`，首次启动自动建表并写入 8 个模板种子数据（脚本幂等，后端每次启动也会重复执行，不会产生脏数据）。
 
+> 凭据说明：compose 内的数据库密码默认值仅供本地/演示开箱即用，生产部署请复制 `.env.example` 为 `.env` 覆盖。应用不使用 root 连接，而是使用最小权限专用账号 `material_app`（由 MySQL 镜像自动创建，仅授权 `material_maker` 库）。
+> 升级提示：若此前用旧版 compose 启动过，MySQL 数据卷中仍是旧凭据/旧账号，需 `docker compose down -v` 清空数据卷重建，或通过 `.env` 提供与旧卷一致的密码。
+
 ## 本地开发启动
 
 1. 准备 MySQL 8：确保有可写账号（后端 JDBC 参数含 `createDatabaseIfNotExist=true`，无需手动建库）。
@@ -86,15 +89,17 @@ materialMaker/
 | 前端类型检查 | `npm run typecheck` |
 | 前端测试 | `npm test` |
 | 前端构建 | `npm run build` |
-| 端到端冒烟（需后端已启动） | `node scripts/smoke-test.mjs http://localhost:8080` |
+| 端到端冒烟（需后端已启动，且以 `DEV_TOOLS_ENABLED=true` 启动后端） | `node scripts/smoke-test.mjs http://localhost:8080` |
 
 ## 配置项
 
 | 配置 | 位置 | 默认值 | 说明 |
 |---|---|---|---|
-| `DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD` | 环境变量 | localhost/3306/material_maker/root/空 | 数据库连接 |
+| `DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD` | 环境变量 | localhost/3306/material_maker/root/空 | 数据库连接（Docker 部署使用专用账号 `material_app`，仅授权 material_maker 库） |
+| `MYSQL_ROOT_PASSWORD` / `DB_PASSWORD` | compose `.env` 文件 | 演示默认值 | 生产部署请复制 `.env.example` 为 `.env` 覆盖，不要使用仓库内默认密码 |
 | `STORAGE_DIR` | 环境变量 | `./data` | 上传素材与生成结果目录（`uploads/`、`results/` 子目录） |
-| `simulation.step-delay-millis` | application.yml | 三阶段 1500/3500/1500ms | 各阶段模拟耗时 |
+| `DEV_TOOLS_ENABLED` | 环境变量 | `false` | 演示调试接口 `/api/dev/simulation` 开关；生产环境保持关闭 |
+| `simulation.step-delay-millis` | application.yml | 三阶段 1500/3500/1500ms | 各阶段模拟耗时（运行时可通过 dev 接口调整，单阶段上限 600 秒） |
 | `simulation.fail-phase` | application.yml | 空 | 注入失败的阶段 |
 | `API_ORIGIN` | 前端环境变量 | http://localhost:8080 | Next 服务端代理目标 |
 
@@ -103,6 +108,14 @@ materialMaker/
 ## 用户身份与个人记录
 
 演示用轻量方案：任意用户名即可登录（`POST /api/auth/login`），首次登录自动建用户并签发随机令牌；前端存入 localStorage，刷新后保持登录。后续请求携带 `X-Auth-Token`，后端拦截器解析用户，任务/素材数据全部按用户隔离。
+
+安全约束：
+
+- 令牌有效期 7 天（过期自动失效，登录时顺带清理过期令牌）；
+- `DELETE /api/auth/logout` 登出即吊销令牌；
+- 同一用户名登录限流（每分钟 10 次），缓解刷号/刷令牌滥用；
+- `/files/uploads/**` 与 `/files/results/**` 为私有内容，静态访问同样要求登录（`<img>` 场景通过 `?token=` 查询参数携带，由前端 `fileUrl()` 统一附加）；
+- 上传文件服务端校验 MIME 白名单 + 文件头魔数，存储扩展名由服务端映射生成，杜绝伪装成图片的可执行内容（存储型 XSS）。
 
 演示方法：浏览器打开网站 → 右上角“登录” → 输入用户名（如 `alice`）→ 提交任务后另开无痕窗口用 `bob` 登录，可见两人任务与素材互不可见。
 
@@ -113,12 +126,13 @@ materialMaker/
 | GET | `/api/templates?category=` | 模板列表（可按分类筛选） |
 | GET | `/api/templates/{id}` | 模板详情 |
 | POST | `/api/auth/login` | 登录，返回 `{token, username}` |
+| DELETE | `/api/auth/logout` | 登出，吊销当前令牌（幂等） |
 | POST | `/api/materials` | 上传素材（multipart，含 templateId），返回素材记录与预览地址 |
 | POST | `/api/tasks` | 提交任务 `{templateId, materialIds[]}`，校验通过后立即返回 `{taskId, status:WAITING}` |
 | GET | `/api/tasks` | 当前用户历史任务（含步骤明细） |
 | GET | `/api/tasks/{id}` | 单个任务状态 |
-| GET/POST | `/api/dev/simulation` | 查看/修改失败注入与各阶段耗时（演示用） |
-| GET | `/files/**` | 上传素材与生成结果的静态访问 |
+| GET/POST | `/api/dev/simulation` | 查看/修改失败注入与各阶段耗时（演示用，需 `DEV_TOOLS_ENABLED=true`，默认关闭） |
+| GET | `/files/uploads/**`、`/files/results/**` | 上传素材与生成结果的静态访问（需登录，支持 `?token=` 参数） |
 
 错误统一返回 `{timestamp, status, message}`。
 

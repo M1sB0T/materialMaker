@@ -76,6 +76,7 @@ class TaskPipelineTest {
     void shouldRunAllStepsInOrderOnSuccess() throws IOException {
         Task task = waitingTask("t1");
         when(taskMapper.findById("t1")).thenReturn(task);
+        when(taskMapper.claimForProcessing("t1")).thenReturn(1);
         when(templateMapper.findById("tpl-1")).thenReturn(template());
         when(resultStore.buildResult(eq("tpl-1"), anyString(), eq("t1")))
                 .thenReturn("/files/results/t1.png");
@@ -83,7 +84,7 @@ class TaskPipelineTest {
         pipeline.run("t1");
 
         InOrder inOrder = inOrder(taskMapper, taskStepMapper);
-        inOrder.verify(taskMapper).updateStatus("t1", TaskStatus.PROCESSING);
+        inOrder.verify(taskMapper).claimForProcessing("t1");
         inOrder.verify(taskMapper).updatePhase("t1", TaskPhases.MATERIAL_CHECK);
         inOrder.verify(taskStepMapper).markRunning(eq("t1"), eq(TaskPhases.MATERIAL_CHECK), any());
         inOrder.verify(taskStepMapper).markSuccess(eq("t1"), eq(TaskPhases.MATERIAL_CHECK), any());
@@ -103,6 +104,7 @@ class TaskPipelineTest {
     void shouldStopFollowingStepsWhenInjectedFailureHits() throws IOException {
         simulation.setFailPhase(TaskPhases.GENERATING);
         when(taskMapper.findById("t1")).thenReturn(waitingTask("t1"));
+        when(taskMapper.claimForProcessing("t1")).thenReturn(1);
         when(templateMapper.findById("tpl-1")).thenReturn(template());
 
         pipeline.run("t1");
@@ -120,22 +122,24 @@ class TaskPipelineTest {
     }
 
     @Test
-    @DisplayName("已完成任务不因重复投递再次执行")
+    @DisplayName("已完成任务不因重复投递再次执行（原子抢占失败即跳过）")
     void shouldSkipTaskThatIsNotWaiting() {
         Task task = waitingTask("t1");
         task.setStatus(TaskStatus.SUCCESS);
         when(taskMapper.findById("t1")).thenReturn(task);
+        when(taskMapper.claimForProcessing("t1")).thenReturn(0);
 
         pipeline.run("t1");
 
-        verify(taskMapper, never()).updateStatus(anyString(), anyString());
         verify(taskStepMapper, never()).markRunning(anyString(), anyString(), any());
+        verify(taskMapper, never()).updatePhase(anyString(), anyString());
     }
 
     @Test
     @DisplayName("结果整理异常会将任务标记为该阶段失败")
     void shouldFailTaskWhenResultAssemblyThrows() throws IOException {
         when(taskMapper.findById("t1")).thenReturn(waitingTask("t1"));
+        when(taskMapper.claimForProcessing("t1")).thenReturn(1);
         when(templateMapper.findById("tpl-1")).thenReturn(template());
         when(resultStore.buildResult(anyString(), anyString(), anyString()))
                 .thenThrow(new IOException("磁盘写入失败"));

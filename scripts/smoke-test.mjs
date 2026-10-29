@@ -96,7 +96,9 @@ async function main() {
   console.log("== 5. 轮询任务状态 ==");
   const task = await pollTask(login.token, submit.taskId);
   check(task.status === "SUCCESS", "任务最终成功");
-  const img = await fetch(`${BASE}${task.resultUrl}`);
+  // 结果图属私有内容（/files/results/** 需登录），<img> 场景通过 ?token= 携带凭证
+  const resultUrlWithToken = `${BASE}${task.resultUrl}?token=${encodeURIComponent(login.token)}`;
+  const img = await fetch(resultUrlWithToken);
   check(img.ok, `结果可访问: ${task.resultUrl}`);
   await img.arrayBuffer(); // 完整读取响应体，避免中断下载在服务端产生连接中断噪音
 

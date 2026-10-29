@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, fileUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useTasksSnapshot, useTasksStore } from "@/lib/tasks-context";
 import { formatTime, statusText } from "@/lib/tasksStore";
@@ -27,7 +27,7 @@ function HistoryCard({ task }: { task: TaskView }) {
     >
       {task.status === "SUCCESS" && task.resultUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="history-result" src={task.resultUrl} alt={`任务结果：${task.templateTitle}`} />
+        <img className="history-result" src={fileUrl(task.resultUrl)} alt={`任务结果：${task.templateTitle}`} />
       ) : (
         <span className={processing ? "history-processing" : ""}>
           {task.status === "WAITING" && "排队中…"}

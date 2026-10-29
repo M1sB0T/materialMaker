@@ -50,8 +50,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnknown(Exception e) {
+        // 只记录日志，不把内部异常细节（SQL、路径、类名等）泄露给客户端
         log.error("未处理异常", e);
-        return body(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误：" + e.getMessage());
+        return body(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误，请稍后重试");
     }
 
     private ResponseEntity<Map<String, Object>> body(HttpStatus status, String message) {

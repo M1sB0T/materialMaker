@@ -1,7 +1,6 @@
 package com.bot.materialmaker.service;
 
 import com.bot.materialmaker.common.TaskPhases;
-import com.bot.materialmaker.common.TaskStatus;
 import com.bot.materialmaker.config.SimulationProperties;
 import com.bot.materialmaker.mapper.TaskMapper;
 import com.bot.materialmaker.mapper.TaskStepMapper;
@@ -47,8 +46,8 @@ public class TaskPipeline {
             log.warn("任务 {} 不存在，跳过执行", taskId);
             return;
         }
-        // 已受理过的任务不重复执行（防止重复投递）
-        if (!TaskStatus.WAITING.equals(task.getStatus())) {
+        // 已受理过的任务不重复执行（原子抢占：仅 WAITING 能被置为 PROCESSING）
+        if (taskMapper.claimForProcessing(taskId) == 0) {
             log.info("任务 {} 状态为 {}，跳过重复执行", taskId, task.getStatus());
             return;
         }
@@ -59,7 +58,6 @@ public class TaskPipeline {
         }
 
         log.info("任务 {} 开始处理，模板 {}", taskId, template.getId());
-        taskMapper.updateStatus(taskId, TaskStatus.PROCESSING);
 
         String resultUrl = null;
         for (String phase : TaskPhases.ALL) {

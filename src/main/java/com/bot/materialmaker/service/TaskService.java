@@ -18,7 +18,9 @@ import com.bot.materialmaker.model.Template;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,7 +99,27 @@ public class TaskService {
     }
 
     public List<TaskView> listByUser(Long userId) {
-        return taskMapper.findByUser(userId).stream().map(this::toView).toList();
+        List<Task> tasks = taskMapper.findByUser(userId);
+        if (tasks.isEmpty()) {
+            return List.of();
+        }
+        // 批量预取模板与步骤，避免逐任务查询的 N+1 问题
+        Map<String, Template> templates = templateMapper.findAll().stream()
+                .collect(Collectors.toMap(Template::getId, t -> t));
+        Map<String, List<TaskStep>> stepsByTask = taskStepMapper
+                .findByTaskIds(tasks.stream().map(Task::getId).toList())
+                .stream()
+                .collect(Collectors.groupingBy(TaskStep::getTaskId));
+        return tasks.stream()
+                .map(task -> toView(task,
+                        templates.get(task.getTemplateId()),
+                        stepsByTask.getOrDefault(task.getId(), List.of())))
+                .toList();
+    }
+
+    /** 任务落库后投递失败（线程池拒绝等）的兜底：直接落终态，避免永远 WAITING */
+    public void failTask(String taskId, String reason) {
+        taskMapper.markFailed(taskId, null, reason, LocalDateTime.now());
     }
 
     public TaskView get(Long userId, String taskId) {
@@ -109,10 +131,15 @@ public class TaskService {
     }
 
     public TaskView toView(Task task) {
+        Template template = templateMapper.findById(task.getTemplateId());
+        return toView(task, template, taskStepMapper.findByTask(task.getId()));
+    }
+
+    /** 视图组装：模板与步骤由调用方传入（单查或批量预取均可） */
+    private TaskView toView(Task task, Template template, List<TaskStep> steps) {
         TaskView view = new TaskView();
         view.setId(task.getId());
         view.setTemplateId(task.getTemplateId());
-        Template template = templateMapper.findById(task.getTemplateId());
         view.setTemplateTitle(template == null ? task.getTemplateId() : template.getTitle());
         view.setStatus(task.getStatus());
         view.setCurrentPhase(task.getCurrentPhase());
@@ -123,7 +150,7 @@ public class TaskService {
         view.setCreatedAt(task.getCreatedAt() == null ? null : task.getCreatedAt().toString());
         view.setUpdatedAt(task.getUpdatedAt() == null ? null : task.getUpdatedAt().toString());
         view.setFinishedAt(task.getFinishedAt() == null ? null : task.getFinishedAt().toString());
-        view.setSteps(taskStepMapper.findByTask(task.getId()).stream().map(this::toStepView).toList());
+        view.setSteps(steps.stream().map(this::toStepView).toList());
         return view;
     }
 

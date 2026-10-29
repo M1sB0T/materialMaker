@@ -37,6 +37,15 @@ export function clearAuth(): void {
   window.localStorage.removeItem(AUTH_KEY);
 }
 
+/** 为需登录的静态资源 URL（/files/uploads、/files/results）附加 token 查询参数。
+ *  <img> 等标签无法携带 X-Auth-Token 自定义头，浏览器端用此方式携带凭证。 */
+export function fileUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  const auth = loadAuth();
+  if (!auth?.token) return url;
+  return url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(auth.token);
+}
+
 /** 统一请求封装：自动携带 X-Auth-Token，非 2xx 抛 ApiError（保留后端 message） */
 export async function api<T>(
   path: string,

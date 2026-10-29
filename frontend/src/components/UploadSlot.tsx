@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadMaterial } from "@/lib/api";
+import { fileUrl, uploadMaterial } from "@/lib/api";
 import type { MaterialView } from "@/types";
 
 interface UploadSlotProps {
@@ -61,7 +61,7 @@ export function UploadSlot({
       {material ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="slot-preview" src={material.previewUrl} alt={`已上传素材：${material.originalName}`} />
+          <img className="slot-preview" src={fileUrl(material.previewUrl)} alt={`已上传素材：${material.originalName}`} />
           <div className="slot-actions" style={{ zIndex: 3 }}>
             <button
               type="button"

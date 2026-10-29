@@ -18,6 +18,12 @@ public interface TaskStepMapper {
     @Select("SELECT * FROM task_steps WHERE task_id = #{taskId} ORDER BY id")
     List<TaskStep> findByTask(String taskId);
 
+    /** 批量查询多个任务的步骤（避免任务列表页 N+1 查询） */
+    @Select("<script>SELECT * FROM task_steps WHERE task_id IN "
+            + "<foreach item='item' collection='taskIds' open='(' separator=',' close=')'>#{item}</foreach>"
+            + " ORDER BY id</script>")
+    List<TaskStep> findByTaskIds(@Param("taskIds") List<String> taskIds);
+
     @Update("UPDATE task_steps SET status = 'RUNNING', started_at = #{startedAt} "
             + "WHERE task_id = #{taskId} AND step = #{step}")
     int markRunning(@Param("taskId") String taskId, @Param("step") String step,
