@@ -1,5 +1,6 @@
 /**
- * 生成演示用 PNG 图片（模板封面 + 模拟生成结果）。
+ * 生成演示用 PNG 图片（模拟生成的色块结果图）。
+ * 模板封面使用人工准备的 input 图（src/main/resources/static/demo/covers/），本脚本不再生成。
  * 纯 Node 实现的最小 PNG 编码器（zlib + CRC32），无需任何依赖。
  * 用法：node scripts/generate-demo-images.mjs
  */
@@ -173,14 +174,11 @@ const templateIds = [
   "demo-photo-frame", "demo-collage", "demo-banner",
 ];
 
-mkdirSync(coversDir, { recursive: true });
 mkdirSync(resultsDir, { recursive: true });
 
 for (const id of templateIds) {
-  const cover = coverFor(id);
-  writeFileSync(join(coversDir, `${id}.png`), encodePng(cover.width, cover.height, cover.rgb));
   const result = resultFor(id);
   writeFileSync(join(resultsDir, `${id}.png`), encodePng(result.width, result.height, result.rgb));
-  console.log(`generated: ${id} (cover + result)`);
+  console.log(`generated: ${id} (result)`);
 }
 console.log("done.");
