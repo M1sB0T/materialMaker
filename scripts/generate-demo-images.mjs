@@ -170,7 +170,7 @@ function resultFor(id, width = 640, height = 860) {
 
 const templateIds = [
   "demo-postcard", "demo-avatar", "demo-wallpaper", "demo-meme",
-  "demo-photo-frame", "demo-collage", "demo-banner", "demo-badge",
+  "demo-photo-frame", "demo-collage", "demo-banner",
 ];
 
 mkdirSync(coversDir, { recursive: true });

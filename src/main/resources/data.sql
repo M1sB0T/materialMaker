@@ -16,6 +16,4 @@ VALUES
     ('demo-collage', '旅行拼图', '家庭记忆', '/demo/covers/demo-collage.png',
      '上传 4 张照片，模拟生成一张四宫格旅行拼图', 4, 'image/jpeg,image/png', 5242880, 'demo-collage.png'),
     ('demo-banner', '商品主图', '电商素材', '/demo/covers/demo-banner.png',
-     '上传 1 张商品照片，模拟生成一张电商主图', 1, 'image/jpeg,image/png', 5242880, 'demo-banner.png'),
-    ('demo-badge', '促销角标', '电商素材', '/demo/covers/demo-badge.png',
-     '上传 2 张商品图，模拟生成一张促销角标素材', 2, 'image/jpeg,image/png', 5242880, 'demo-badge.png');
+     '上传 1 张商品照片，模拟生成一张电商主图', 1, 'image/jpeg,image/png', 5242880, 'demo-banner.png');
