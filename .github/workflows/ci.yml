@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  backend:
+    name: 后端测试与构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: 运行后端测试
+        run: mvn -B test
+      - name: 打包
+        run: mvn -B package -DskipTests
+
+  frontend:
+    name: 前端 lint / 类型检查 / 测试 / 构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    name: Docker Compose 构建与冒烟验证
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建镜像
+        run: docker compose build
+      - name: 启动整套环境
+        run: docker compose up -d
+      - name: 后端就绪探测
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/templates > /dev/null; then
+              echo "backend ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend not ready in time"; docker compose logs backend; exit 1
+      - name: 前端就绪探测
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/ -o /dev/null; then
+              echo "frontend ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "frontend not ready in time"; docker compose logs frontend; exit 1
+      - name: 端到端冒烟（登录→上传→提交→等待结果→失败注入）
+        run: node scripts/smoke-test.mjs http://localhost:8080 GENERATING
+      - name: 收尾清理
+        if: always()
+        run: docker compose down -v
